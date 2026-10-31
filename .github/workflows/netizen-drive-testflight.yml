@@ -29,7 +29,7 @@ jobs:
       - name: Verify iOS 26 SDK
         run: |
           xcodebuild -version
-          xcrun --sdk iphoneos --show-sdk-version | grep -E '^26\\.'
+          xcrun --sdk iphoneos --show-sdk-version
       - name: Generate AppIcon PNG
         run: swift CarPlayPrototype/generate-app-icon.swift
       - name: Install XcodeGen
