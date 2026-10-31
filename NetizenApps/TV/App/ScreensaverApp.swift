@@ -77,10 +77,11 @@ private final class SignageFeed: ObservableObject {
 struct SignageView: View {
     @StateObject private var feed = SignageFeed()
     @State private var selected = 0
+    @State private var lastRotation = Date.now
+    @State private var lastRefresh = Date.distantPast
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            let elapsed = Int(context.date.timeIntervalSince1970)
             let item = feed.headlines.isEmpty ? nil : feed.headlines[(selected + feed.headlines.count) % feed.headlines.count]
             ZStack {
                 Color(red: 0.012, green: 0.082, blue: 0.176).ignoresSafeArea()
@@ -157,11 +158,15 @@ struct SignageView: View {
                 .padding(65)
                 .foregroundStyle(.white)
             }
-            .onChange(of: elapsed / 15) { _, _ in
-                if !feed.headlines.isEmpty { selected = (selected + 1) % feed.headlines.count }
-            }
-            .onChange(of: elapsed / 300) { _, _ in
-                Task { await feed.refresh() }
+            .onChange(of: context.date) { _, now in
+                if now.timeIntervalSince(lastRotation) >= 15 {
+                    lastRotation = now
+                    if !feed.headlines.isEmpty { selected = (selected + 1) % feed.headlines.count }
+                }
+                if now.timeIntervalSince(lastRefresh) >= 300 {
+                    lastRefresh = now
+                    Task { await feed.refresh() }
+                }
             }
         }
         .task { await feed.refresh() }
