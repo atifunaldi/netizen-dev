@@ -1,0 +1,86 @@
+name: Netizen Signage TestFlight
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  distribute:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26'
+      - name: Generate brand assets
+        run: |
+          swift CarPlayPrototype/generate-app-icon.swift NetizenApps/TV/App/Assets.xcassets/NetizenMark.imageset/NetizenMark.png
+          swift NetizenApps/TV/generate-tv-assets.swift
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Install distribution signing
+        env:
+          CERT: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          PASS: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_SIGNAGE_PROVISIONING_PROFILE_BASE64 }}
+          API_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ISSUER: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          for name in CERT PASS PROFILE API_KEY KEY_ID ISSUER; do
+            if [[ -z "${!name}" ]]; then echo "::error::Missing secret: $name"; exit 1; fi
+          done
+          KEYCHAIN="$RUNNER_TEMP/netizen-signing.keychain-db"
+          KEYCHAIN_PASS="$(openssl rand -hex 24)"
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+          printf '%s' "$CERT" | base64 -D > "$RUNNER_TEMP/distribution.p12"
+          security create-keychain -p "$KEYCHAIN_PASS" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASS" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/distribution.p12" -k "$KEYCHAIN" -P "$PASS" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASS" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/.appstoreconnect/private_keys"
+          printf '%s' "$PROFILE" | base64 -D > "$RUNNER_TEMP/app.mobileprovision"
+          security cms -D -i "$RUNNER_TEMP/app.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          uuid=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$RUNNER_TEMP/profile.plist")
+          name=$(/usr/libexec/PlistBuddy -c 'Print Name' "$RUNNER_TEMP/profile.plist")
+          echo "PROFILE_NAME=$name" >> "$GITHUB_ENV"
+          cp "$RUNNER_TEMP/app.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$uuid.mobileprovision"
+          printf '%s\n' "$API_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8"
+          chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8"
+      - name: Generate Xcode project
+        working-directory: NetizenApps/TV
+        run: xcodegen generate
+      - name: Archive signed app
+        working-directory: NetizenApps/TV
+        run: |
+          xcodebuild -project NetizenSignage.xcodeproj -scheme NetizenSignage -configuration Release -destination 'generic/platform=tvOS' -archivePath "$RUNNER_TEMP/NetizenSignage.xcarchive" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=WV5R646K3B CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" archive
+      - name: Export App Store IPA
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+          <key>method</key><string>app-store-connect</string>
+          <key>signingStyle</key><string>manual</string>
+          <key>teamID</key><string>WV5R646K3B</string>
+          <key>provisioningProfiles</key><dict>
+          <key>com.netizen.signage</key><string>$PROFILE_NAME</string>
+          </dict></dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/NetizenSignage.xcarchive" -exportPath "$RUNNER_TEMP/export" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+      - name: Upload to TestFlight
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ISSUER: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          ipa=$(find "$RUNNER_TEMP/export" -maxdepth 1 -name '*.ipa' -print -quit)
+          test -n "$ipa"
+          xcrun altool --upload-app -f "$ipa" -t tvos --apiKey "$KEY_ID" --apiIssuer "$ISSUER"
+      - name: Clean up signing credentials
+        if: always()
+        run: |
+          if [[ -n "${KEYCHAIN:-}" ]]; then security delete-keychain "$KEYCHAIN" 2>/dev/null || true; fi
+          rm -f "$RUNNER_TEMP/distribution.p12" "$RUNNER_TEMP/app.mobileprovision"
