@@ -106,7 +106,7 @@ struct NewsHomeView: View {
                     .foregroundStyle(.secondary)
                     .padding(8)
             }
-            .navigationTitle("Netizen")
+            .navigationTitle("Netizen News")
             .task(id: publication) { await model.load(publication) }
         }
         .tint(Color(red: 1, green: 0.04, blue: 0.22))
