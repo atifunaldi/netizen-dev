@@ -56,6 +56,15 @@ jobs:
         working-directory: NetizenApps/News
         run: |
           xcodebuild -project NetizenNews.xcodeproj -scheme NetizenNews -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/NetizenNews.xcarchive" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=WV5R646K3B CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" archive
+      - name: Verify archived version
+        run: |
+          set -euo pipefail
+          plist="$RUNNER_TEMP/NetizenNews.xcarchive/Products/Applications/NetizenNews.app/Info.plist"
+          version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")
+          build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")
+          echo "Archived Netizen News: $version ($build)"
+          test "$version" = "1.0"
+          test "$build" = "2"
       - name: Export App Store IPA
         run: |
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
@@ -70,6 +79,17 @@ jobs:
           </dict></dict></plist>
           PLIST
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/NetizenNews.xcarchive" -exportPath "$RUNNER_TEMP/export" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+      - name: Verify exported IPA version
+        run: |
+          set -euo pipefail
+          ipa=$(find "$RUNNER_TEMP/export" -maxdepth 1 -name '*.ipa' -print -quit)
+          test -n "$ipa"
+          unzip -p "$ipa" 'Payload/*.app/Info.plist' > "$RUNNER_TEMP/exported-info.plist"
+          version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$RUNNER_TEMP/exported-info.plist")
+          build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$RUNNER_TEMP/exported-info.plist")
+          echo "Exported IPA: $version ($build)"
+          test "$version" = "1.0"
+          test "$build" = "2"
       - name: Upload to TestFlight
         env:
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
