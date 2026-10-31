@@ -22,11 +22,22 @@ enum Publication: String, CaseIterable, Identifiable {
 
 struct WPTitle: Decodable { let rendered: String }
 struct WPPost: Decodable, Identifiable {
+    struct Media: Decodable { let source_url: URL? }
+    struct Embedded: Decodable {
+        let media: [Media]?
+        enum CodingKeys: String, CodingKey { case media = "wp:featuredmedia" }
+    }
     let id: Int
     let date: String
     let link: URL
     let title: WPTitle
     let excerpt: WPTitle
+    let embedded: Embedded?
+    enum CodingKeys: String, CodingKey {
+        case id, date, link, title, excerpt
+        case embedded = "_embedded"
+    }
+    var imageURL: URL? { embedded?.media?.first?.source_url }
 }
 
 @MainActor
@@ -43,7 +54,8 @@ final class NewsModel: ObservableObject {
             let endpoint = publication.baseURL.appending(path: "wp-json/wp/v2/posts")
             var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false)!
             components.queryItems = [URLQueryItem(name: "per_page", value: "20"),
-                                     URLQueryItem(name: "orderby", value: "date")]
+                                     URLQueryItem(name: "orderby", value: "date"),
+                                     URLQueryItem(name: "_embed", value: "1")]
             var request = URLRequest(url: components.url!)
             request.timeoutInterval = 15
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -88,7 +100,18 @@ struct NewsHomeView: View {
                 if let error = model.error { Text(error).foregroundStyle(.red).padding() }
                 List(model.posts) { post in
                     Link(destination: post.link) {
-                        VStack(alignment: .leading, spacing: 8) {
+                        HStack(alignment: .top, spacing: 14) {
+                            if let imageURL = post.imageURL {
+                                AsyncImage(url: imageURL) { image in
+                                    image.resizable().scaledToFill()
+                                } placeholder: {
+                                    Rectangle().fill(Color.secondary.opacity(0.1))
+                                }
+                                .frame(width: 100, height: 85)
+                                .clipped()
+                                .cornerRadius(8)
+                            }
+                            VStack(alignment: .leading, spacing: 8) {
                             Text(post.title.rendered.plainHTML)
                                 .font(.headline)
                                 .foregroundStyle(.primary)
@@ -96,6 +119,7 @@ struct NewsHomeView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(3)
+                            }
                         }
                         .padding(.vertical, 4)
                     }
