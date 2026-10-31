@@ -24,6 +24,7 @@ jobs:
         run: |
           swift CarPlayPrototype/generate-app-icon.swift NetizenApps/News/App/Assets.xcassets/AppIcon.appiconset/AppIcon.png
           swift CarPlayPrototype/generate-app-icon.swift NetizenApps/TV/App/Assets.xcassets/NetizenMark.imageset/NetizenMark.png
+          swift NetizenApps/TV/generate-tv-assets.swift
       - name: Compile Netizen iPhone app
         working-directory: NetizenApps/News
         run: |
