@@ -14,7 +14,7 @@ final class DriveActivityManager: ObservableObject {
         do {
             let attributes = DriveActivityAttributes(title: "Araç Bilgi Paneli")
             let state = DriveActivityAttributes.ContentState(
-                temperatureCelsius: temperature, locationName: location, observedAt: .now
+                temperatureCelsius: Double(temperature), locationName: location, observedAt: .now
             )
             current = try Activity.request(
                 attributes: attributes,
