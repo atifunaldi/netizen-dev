@@ -9,6 +9,7 @@ struct DriveApp: App {
 
 struct DriveContentView: View {
     @StateObject private var manager = DriveActivityManager()
+    @StateObject private var weather = WeatherLocation()
 
     var body: some View {
         NavigationStack {
@@ -22,13 +23,23 @@ struct DriveContentView: View {
                 Text("Netizen Drive 1.1")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("Bu sürüm Live Activity önizlemesidir. Gerçek hava, GPS ve CarPlay verileri henüz bağlı değildir.")
+                Text("Konum izniyle güncel hava sıcaklığını alabilir ve Live Activity başlatabilirsiniz. CarPlay bağlantısı henüz etkin değildir.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                 Button {
-                    Task { await manager.startPreview() }
+                    weather.request()
                 } label: {
-                    Label("3°C ile testi başlat", systemImage: "play.fill")
+                    Label("Konum ve hava durumunu al", systemImage: "location.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                Text(weather.temperature.map { "\($0)°C" } ?? "—°C")
+                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                Text(weather.status).font(.footnote).foregroundStyle(.secondary)
+                Button {
+                    Task { await manager.startPreview(temperature: weather.temperature ?? 3, location: weather.temperature == nil ? "Örnek konum" : weather.placeName) }
+                } label: {
+                    Label(weather.temperature == nil ? "3°C örnek testi başlat" : "Güncel sıcaklıkla başlat", systemImage: "play.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
