@@ -20,6 +20,10 @@ targets:
         CFBundleDisplayName: Netizen Signage
         UILaunchScreen: {}
         CFBundleIconName: AppIcon
+        CFBundleIcons:
+          CFBundlePrimaryIcon: AppIcon
+        TVTopShelfImage:
+          TVTopShelfPrimaryImageWide: Top Shelf Image
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.netizen.signage
