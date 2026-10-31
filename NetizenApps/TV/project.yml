@@ -1,4 +1,4 @@
-name: NetizenScreensaver
+name: NetizenSignage
 options:
   bundleIdPrefix: com.netizen
   deploymentTarget:
@@ -7,7 +7,7 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
 targets:
-  NetizenScreensaver:
+  NetizenSignage:
     type: application
     platform: tvOS
     sources:
@@ -15,10 +15,10 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: Netizen Screensaver
+        CFBundleDisplayName: Netizen Signage
         UILaunchScreen: {}
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.netizen.screensaver
+        PRODUCT_BUNDLE_IDENTIFIER: com.netizen.signage
         GENERATE_INFOPLIST_FILE: "NO"
         TARGETED_DEVICE_FAMILY: "3"
