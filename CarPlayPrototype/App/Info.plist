@@ -9,5 +9,6 @@
 <key>CFBundleVersion</key><string>2</string>
 <key>LSRequiresIPhoneOS</key><true/>
 <key>UIApplicationSceneManifest</key><dict><key>UIApplicationSupportsMultipleScenes</key><false/></dict>
+<key>NSLocationWhenInUseUsageDescription</key><string>Bulunduğunuz konumun güncel hava sıcaklığını göstermek için konum izni gereklidir.</string>
 <key>NSSupportsLiveActivities</key><true/>
 </dict></plist>
