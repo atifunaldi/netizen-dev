@@ -1,0 +1,22 @@
+name: CarPlay iOS compile check
+on:
+  push:
+    paths:
+      - "CarPlayPrototype/**"
+      - ".github/workflows/carplay-ios-build.yml"
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: CarPlayPrototype
+        run: xcodegen generate
+      - name: Build iOS Simulator (unsigned)
+        working-directory: CarPlayPrototype
+        run: |
+          xcodebuild -project NetizenDrive.xcodeproj -scheme NetizenDrive -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
