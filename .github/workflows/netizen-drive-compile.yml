@@ -1,0 +1,28 @@
+name: Netizen Drive Compile Check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'CarPlayPrototype/**'
+      - '.github/workflows/netizen-drive-compile.yml'
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26'
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate icon
+        run: swift CarPlayPrototype/generate-app-icon.swift
+      - name: Compile iOS application and widget
+        working-directory: CarPlayPrototype
+        run: |
+          xcodegen generate
+          xcodebuild -project NetizenDrive.xcodeproj -scheme NetizenDrive -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
