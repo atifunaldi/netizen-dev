@@ -15,7 +15,7 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: Netizen
+        CFBundleDisplayName: Netizen News
         CFBundleIconName: AppIcon
         UILaunchScreen: {}
     settings:
