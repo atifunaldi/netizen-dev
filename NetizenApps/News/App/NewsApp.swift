@@ -91,18 +91,54 @@ struct NewsHomeView: View {
     @AppStorage(NewsNotificationSettings.netizen) private var notifyNetizen = true
     @AppStorage(NewsNotificationSettings.families) private var notifyFamilies = true
 
+    private let navy = Color(red: 0.012, green: 0.082, blue: 0.176)
+    private let panel = Color(red: 0.027, green: 0.114, blue: 0.22)
+    private let red = Color(red: 1, green: 0.04, blue: 0.22)
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Yayın", selection: $publication) {
+                HStack(alignment: .center) {
+                    (Text("NETIZEN MEDIA ").foregroundColor(.white) + Text("NEWS").foregroundColor(red))
+                        .font(.system(size: 29, weight: .black, design: .default))
+                        .minimumScaleFactor(0.65)
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    Button { showSettings = true } label: {
+                        Image(systemName: "bell")
+                            .font(.title3.bold())
+                            .foregroundStyle(red)
+                            .frame(width: 42, height: 42)
+                            .background(panel, in: Circle())
+                    }
+                    .accessibilityLabel("Bildirim ayarları")
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 22)
+
+                HStack(spacing: 0) {
                     ForEach(Publication.allCases) { source in
-                        Text(source.rawValue).tag(source)
+                        Button { publication = source } label: {
+                            Text(source.rawValue)
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 13)
+                                .background(publication == source ? red : Color.clear, in: Capsule())
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .pickerStyle(.segmented)
-                .padding()
-                if model.loading { ProgressView().padding() }
-                if let error = model.error { Text(error).foregroundStyle(.red).padding() }
+                .padding(3)
+                .overlay(Capsule().stroke(.white.opacity(0.8), lineWidth: 1))
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+
+                if model.loading { ProgressView().tint(.white).padding() }
+                if let error = model.error { Text(error).foregroundStyle(.white).padding() }
                 List(model.posts) { post in
                     Link(destination: post.link) {
                         HStack(alignment: .top, spacing: 14) {
@@ -110,42 +146,41 @@ struct NewsHomeView: View {
                                 AsyncImage(url: imageURL) { image in
                                     image.resizable().scaledToFill()
                                 } placeholder: {
-                                    Rectangle().fill(Color.secondary.opacity(0.1))
+                                    Rectangle().fill(.white.opacity(0.08))
                                 }
-                                .frame(width: 100, height: 85)
+                                .frame(width: 104, height: 108)
                                 .clipped()
-                                .cornerRadius(8)
+                                .cornerRadius(12)
                             }
                             VStack(alignment: .leading, spacing: 8) {
-                            Text(post.title.rendered.plainHTML)
-                                .font(.headline)
-                                .foregroundStyle(.primary)
-                            Text(post.excerpt.rendered.plainHTML)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(3)
+                                Text(post.title.rendered.plainHTML)
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Text(post.excerpt.rendered.plainHTML)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.white.opacity(0.78))
+                                    .lineLimit(3)
                             }
+                            Spacer(minLength: 0)
                         }
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 9)
                     }
+                    .listRowBackground(panel)
+                    .listRowSeparatorTint(.white.opacity(0.22))
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
                 .refreshable { await model.load(publication) }
                 Text("Powered by Netizen Global Agency")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(8)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .overlay(alignment: .top) { red.frame(height: 2) }
             }
-            .navigationTitle("Netizen News")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "bell")
-                    }
-                    .accessibilityLabel("Bildirim ayarları")
-                }
-            }
+            .background(navy.ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showSettings) {
                 NavigationStack {
                     Form {
