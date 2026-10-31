@@ -1,6 +1,12 @@
 name: Netizen Apps Compile Check
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'NetizenApps/**'
+      - 'CarPlayPrototype/generate-app-icon.swift'
+      - '.github/workflows/netizen-apps-compile.yml'
 permissions:
   contents: read
 jobs:
