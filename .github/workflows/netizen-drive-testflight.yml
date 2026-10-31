@@ -22,6 +22,16 @@ jobs:
           for name in CERT PASS APP_PROFILE WIDGET_PROFILE KEY_ID ISSUER API_KEY; do
             if [[ -z "${!name}" ]]; then echo "::error::Missing secret: $name"; exit 1; fi
           done
+      - name: Select Xcode 26
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26'
+      - name: Verify iOS 26 SDK
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version | grep -E '^26\\.'
+      - name: Generate AppIcon PNG
+        run: swift CarPlayPrototype/generate-app-icon.swift
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Install signing credentials
