@@ -154,12 +154,12 @@ struct SignageView: View {
 
                     Rectangle().fill(red).frame(height: 4).padding(.top, 12)
                     HStack(spacing: 30) {
-                        ForEach(categories, id: \\.0) { category in
-                            Text(category.0)
+                        ForEach(categories.indices, id: \.self) { index in
+                            Text(categories[index].0)
                                 .font(.system(size: 18, weight: .bold))
                                 .padding(.horizontal, 13)
                                 .padding(.vertical, 13)
-                                .background(category.0 == "TÜMÜ" ? red : .clear)
+                                .background(categories[index].0 == "TÜMÜ" ? red : .clear)
                         }
                         Spacer()
                         Text(String(format: "%02d / %02d", feed.headlines.isEmpty ? 0 : selected + 1, feed.headlines.count))
