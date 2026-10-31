@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct NetizenNewsApp: App {
+    @UIApplicationDelegateAdaptor(NewsAppDelegate.self) private var appDelegate
     var body: some Scene {
         WindowGroup { NewsHomeView() }
     }
@@ -85,6 +86,10 @@ extension String {
 struct NewsHomeView: View {
     @State private var publication: Publication = .netizen
     @StateObject private var model = NewsModel()
+    @StateObject private var notifications = NewsNotificationManager.shared
+    @State private var showSettings = false
+    @AppStorage(NewsNotificationSettings.netizen) private var notifyNetizen = true
+    @AppStorage(NewsNotificationSettings.families) private var notifyFamilies = true
 
     var body: some View {
         NavigationStack {
@@ -131,6 +136,43 @@ struct NewsHomeView: View {
                     .padding(8)
             }
             .navigationTitle("Netizen News")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "bell")
+                    }
+                    .accessibilityLabel("Bildirim ayarları")
+                }
+            }
+            .sheet(isPresented: $showSettings) {
+                NavigationStack {
+                    Form {
+                        Section("Yayın bildirimleri") {
+                            Toggle("Netizenlist", isOn: $notifyNetizen)
+                            Toggle("Annelere Fikir Olsun", isOn: $notifyFamilies)
+                            Button("Bildirim izni iste") {
+                                Task { await notifications.requestAuthorization() }
+                            }
+                            Text(notifications.status).font(.footnote)
+                        }
+                        Section {
+                            Text("Bildirimlerin uygulama kapalıyken ulaşması için güvenli APNs gönderim sunucusu henüz kurulmalıdır.")
+                                .font(.footnote)
+                        }
+                    }
+                    .navigationTitle("Bildirimler")
+                    .toolbar { ToolbarItem(placement: .confirmationAction) {
+                        Button("Bitti") { showSettings = false }
+                    } }
+                }
+            }
+            .onChange(of: notifications.selectedArticleURL) { _, url in
+                guard let url else { return }
+                UIApplication.shared.open(url)
+                notifications.selectedArticleURL = nil
+            }
             .task(id: publication) { await model.load(publication) }
         }
         .tint(Color(red: 1, green: 0.04, blue: 0.22))
