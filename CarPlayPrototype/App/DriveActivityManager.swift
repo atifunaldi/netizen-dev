@@ -6,7 +6,7 @@ final class DriveActivityManager: ObservableObject {
     @Published var message = "Hazır"
     private var current: Activity<DriveActivityAttributes>?
 
-    func startPreview() async {
+    func startPreview(temperature: Int = 3, location: String = "Örnek konum") async {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             message = "Live Activities ayarlardan etkinleştirilmeli."
             return
@@ -14,14 +14,14 @@ final class DriveActivityManager: ObservableObject {
         do {
             let attributes = DriveActivityAttributes(title: "Araç Bilgi Paneli")
             let state = DriveActivityAttributes.ContentState(
-                temperatureCelsius: 3, locationName: "Örnek konum", observedAt: .now
+                temperatureCelsius: temperature, locationName: location, observedAt: .now
             )
             current = try Activity.request(
                 attributes: attributes,
                 content: ActivityContent(state: state, staleDate: Date().addingTimeInterval(15 * 60)),
                 pushType: nil
             )
-            message = "Örnek Live Activity başlatıldı."
+            message = "Live Activity başlatıldı."
         } catch {
             message = "Başlatılamadı: \(error.localizedDescription)"
         }
