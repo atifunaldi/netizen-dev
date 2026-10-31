@@ -33,8 +33,8 @@ func render(_ width: Int, _ height: Int, to path: String) throws {
     print("Generated \(path)")
 }
 
-try render(400, 240, to: "\(root)/App Icon - Small.imagestack/Front.imagestacklayer/Content.imageset/NetizenSmall.png")
+try render(800, 480, to: "\(root)/App Icon - Small.imagestack/Front.imagestacklayer/Content.imageset/NetizenSmall2x.png")
 try render(1280, 768, to: "\(root)/App Icon - Large.imagestack/Front.imagestacklayer/Content.imageset/NetizenLarge.png")
-try render(400, 240, to: "\(root)/App Icon - Small.imagestack/Back.imagestacklayer/Content.imageset/NetizenSmallBackground.png")
+try render(800, 480, to: "\(root)/App Icon - Small.imagestack/Back.imagestacklayer/Content.imageset/NetizenSmallBackground2x.png")
 try render(1280, 768, to: "\(root)/App Icon - Large.imagestack/Back.imagestacklayer/Content.imageset/NetizenLargeBackground.png")
 try render(2320, 720, to: "\(root)/Top Shelf Image.imageset/TopShelf.png")
