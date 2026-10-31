@@ -1,0 +1,30 @@
+name: Netizen Apps Compile Check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26'
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate shared identity assets
+        run: |
+          swift CarPlayPrototype/generate-app-icon.swift NetizenApps/News/App/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+          swift CarPlayPrototype/generate-app-icon.swift NetizenApps/TV/App/Assets.xcassets/NetizenMark.imageset/NetizenMark.png
+      - name: Compile Netizen iPhone app
+        working-directory: NetizenApps/News
+        run: |
+          xcodegen generate
+          xcodebuild -project NetizenNews.xcodeproj -scheme NetizenNews -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+      - name: Compile Netizen Apple TV app
+        working-directory: NetizenApps/TV
+        run: |
+          xcodegen generate
+          xcodebuild -project NetizenScreensaver.xcodeproj -scheme NetizenScreensaver -configuration Debug -sdk appletvsimulator -destination 'generic/platform=tvOS Simulator' CODE_SIGNING_ALLOWED=NO build
