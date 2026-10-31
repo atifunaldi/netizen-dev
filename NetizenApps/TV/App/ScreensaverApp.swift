@@ -18,12 +18,9 @@ struct ScreensaverView: View {
             GeometryReader { geometry in
                 ZStack {
                     Color(red: 0.012, green: 0.082, blue: 0.176).ignoresSafeArea()
-                    Circle()
-                        .fill(Color(red: 1, green: 0.04, blue: 0.22))
+                    Image("NetizenMark")
+                        .resizable()
                         .frame(width: 310, height: 310)
-                        .overlay {
-                            Capsule().fill(.white).frame(width: 44, height: 212)
-                        }
                         .offset(x: driftX, y: driftY - 80)
                     VStack {
                         Spacer()
