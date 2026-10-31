@@ -3,6 +3,11 @@
     {
       "filename": "NetizenSmall.png",
       "idiom": "tv",
+      "scale": "1x"
+    },
+    {
+      "filename": "NetizenSmall.png",
+      "idiom": "tv",
       "scale": "2x"
     }
   ],
