@@ -1,0 +1,36 @@
+{
+  "name": "Python, Node.js, and Web Development",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "GitHub.copilot-chat",
+        "GitHub.vscode-pull-request-github",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens"
+      ]
+    }
+  },
+  "forwardPorts": [3000, 5173, 8000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Web app",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Vite dev server",
+      "onAutoForward": "notify"
+    },
+    "8000": {
+      "label": "Python web server",
+      "onAutoForward": "notify"
+    }
+  }
+}
