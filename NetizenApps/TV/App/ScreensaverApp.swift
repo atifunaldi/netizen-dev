@@ -28,9 +28,10 @@ private struct Headline: Decodable, Identifiable {
     let title: Rendered
     let excerpt: Rendered
     let date: String
+    let categories: [Int]?
     let embedded: Embedded?
     enum CodingKeys: String, CodingKey {
-        case id, title, excerpt, date
+        case id, title, excerpt, date, categories
         case embedded = "_embedded"
     }
     var imageURL: URL? {
@@ -80,83 +81,100 @@ struct SignageView: View {
     @State private var lastRotation = Date.now
     @State private var lastRefresh = Date.distantPast
 
+    private let navy = Color(red: 0.012, green: 0.082, blue: 0.176)
+    private let red = Color(red: 1, green: 0.188, blue: 0.29)
+    private let categories: [(String, Int?)] = [
+        ("TÜMÜ", nil), ("TREND", nil), ("TEKNOLOJİ", nil),
+        ("KÜLTÜR", nil), ("SANAT", nil), ("AİLE", nil), ("BEYEFENDİ", nil)
+    ]
+
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            let item = feed.headlines.isEmpty ? nil : feed.headlines[(selected + feed.headlines.count) % feed.headlines.count]
-            ZStack {
-                Color(red: 0.012, green: 0.082, blue: 0.176).ignoresSafeArea()
-                if let url = item?.imageURL {
-                    AsyncImage(url: url) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        Color(red: 0.012, green: 0.082, blue: 0.176)
-                    }
-                    .id(url)
-                    .ignoresSafeArea()
-                    .overlay {
-                        LinearGradient(colors: [.black.opacity(0.1), .black.opacity(0.25), .black.opacity(0.9)],
-                                       startPoint: .top, endPoint: .bottom)
-                    }
-                }
-                VStack(alignment: .leading, spacing: 18) {
-                    HStack(alignment: .top) {
-                        HStack(spacing: 20) {
-                            Image("NetizenMark")
-                                .resizable()
-                                .frame(width: 88, height: 88)
-                            VStack(alignment: .leading) {
-                                Text("NETIZEN")
-                                    .font(.system(size: 42, weight: .heavy))
-                                    .tracking(5)
-                                Text("DIGITAL SIGNAGE")
-                                    .font(.system(size: 18, weight: .medium))
-                                    .tracking(4)
-                            }
+            let item = feed.headlines.isEmpty ? nil : feed.headlines[selected % feed.headlines.count]
+            GeometryReader { geometry in
+                VStack(spacing: 0) {
+                    HStack(alignment: .center) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            (Text("Netizen").foregroundColor(.white) + Text("list").foregroundColor(red))
+                                .font(.system(size: 61, weight: .heavy))
+                            Text("İNTERNET VATANDAŞLARININ BULUŞMA NOKTASI")
+                                .font(.system(size: 17, weight: .medium))
+                                .tracking(3)
+                                .foregroundStyle(.white.opacity(0.75))
                         }
                         Spacer()
-                        VStack(alignment: .trailing) {
-                            Text(context.date, format: .dateTime.hour().minute())
-                                .font(.system(size: 66, weight: .bold, design: .rounded))
-                            Text(context.date, format: .dateTime.weekday(.wide).day().month(.wide).year())
-                                .font(.system(size: 22))
-                        }
+                        Text(context.date, format: .dateTime.day().month(.wide).year().weekday(.wide))
+                            .font(.system(size: 19, weight: .medium))
+                        Rectangle().fill(.white.opacity(0.55)).frame(width: 2, height: 55)
+                        Text(context.date, format: .dateTime.hour().minute())
+                            .font(.system(size: 55, weight: .bold, design: .rounded))
                     }
-                    Spacer()
+                    .frame(height: 120)
+
                     if let item {
-                        Text("NETIZENLIST")
-                            .font(.system(size: 23, weight: .bold))
-                            .padding(.horizontal, 22)
-                            .padding(.vertical, 10)
-                            .background(Color.red)
-                        Text(item.title.rendered.plainText)
-                            .font(.system(size: 66, weight: .heavy))
-                            .lineLimit(3)
-                        Text(item.excerpt.rendered.plainText)
-                            .font(.system(size: 30))
-                            .lineLimit(2)
-                            .foregroundStyle(.white.opacity(0.9))
+                        HStack(alignment: .top, spacing: 44) {
+                            AsyncImage(url: item.imageURL) { image in
+                                image.resizable().scaledToFill()
+                            } placeholder: {
+                                navy.overlay { ProgressView().tint(.white) }
+                            }
+                            .frame(width: geometry.size.width * 0.49, height: geometry.size.height - 235)
+                            .clipped()
+
+                            VStack(alignment: .leading, spacing: 21) {
+                                Text(item.title.rendered.plainText)
+                                    .font(.system(size: 48, weight: .heavy))
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .lineLimit(4)
+                                Text(item.date.prefix(10))
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(.white.opacity(0.7))
+                                Text(item.excerpt.rendered.plainText)
+                                    .font(.system(size: 27))
+                                    .lineSpacing(8)
+                                    .foregroundStyle(.white.opacity(0.88))
+                                    .lineLimit(11)
+                                Spacer(minLength: 0)
+                                Text("Okumaya devam →")
+                                    .font(.system(size: 22, weight: .semibold))
+                                    .overlay(alignment: .bottom) {
+                                        Rectangle().fill(red).frame(height: 3).offset(y: 7)
+                                    }
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        }
+                        .id(item.id)
+                        .transition(.opacity)
+                        .frame(maxHeight: .infinity)
                     } else {
-                        Text(feed.status)
-                            .font(.system(size: 32))
-                    }
-                    Rectangle()
-                        .fill(Color.red)
-                        .frame(height: 5)
-                    HStack {
-                        Text("NETIZENLIST")
-                            .font(.system(size: 20, weight: .heavy))
-                            .foregroundStyle(.red)
-                        Text(feed.headlines.prefix(4).map { $0.title.rendered.plainText }.joined(separator: "    •    "))
-                            .font(.system(size: 19))
-                            .lineLimit(1)
                         Spacer()
-                        Text("Powered by Netizen Global Agency")
-                            .font(.system(size: 17))
-                            .foregroundStyle(.white.opacity(0.75))
+                        Text(feed.status).font(.system(size: 36))
+                        Spacer()
                     }
+
+                    Rectangle().fill(red).frame(height: 4).padding(.top, 12)
+                    HStack(spacing: 30) {
+                        ForEach(categories, id: \\.0) { category in
+                            Text(category.0)
+                                .font(.system(size: 18, weight: .bold))
+                                .padding(.horizontal, 13)
+                                .padding(.vertical, 13)
+                                .background(category.0 == "TÜMÜ" ? red : .clear)
+                        }
+                        Spacer()
+                        Text(String(format: "%02d / %02d", feed.headlines.isEmpty ? 0 : selected + 1, feed.headlines.count))
+                            .font(.system(size: 19, weight: .bold, design: .monospaced))
+                        Text("‹  ›").font(.system(size: 32, weight: .bold))
+                    }
+                    .frame(height: 83)
                 }
-                .padding(65)
+                .padding(.horizontal, 55)
+                .padding(.top, 20)
+                .padding(.bottom, 22)
                 .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(navy)
+                .animation(.easeInOut(duration: 1.2), value: selected)
             }
             .onChange(of: context.date) { _, now in
                 if now.timeIntervalSince(lastRotation) >= 15 {
