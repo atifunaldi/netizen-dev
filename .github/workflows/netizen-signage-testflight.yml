@@ -57,6 +57,13 @@ jobs:
         working-directory: NetizenApps/TV
         run: |
           xcodebuild -project NetizenSignage.xcodeproj -scheme NetizenSignage -configuration Release -destination 'generic/platform=tvOS' -archivePath "$RUNNER_TEMP/NetizenSignage.xcarchive" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=WV5R646K3B CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" archive
+      - name: Verify archived tvOS metadata
+        run: |
+          set -euo pipefail
+          plist="$RUNNER_TEMP/NetizenSignage.xcarchive/Products/Applications/NetizenSignage.app/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundlePrimaryIcon' "$plist"
+          /usr/libexec/PlistBuddy -c 'Print :TVTopShelfImage:TVTopShelfPrimaryImageWide' "$plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist"
       - name: Export App Store IPA
         run: |
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
