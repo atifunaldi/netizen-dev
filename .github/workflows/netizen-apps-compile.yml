@@ -27,4 +27,4 @@ jobs:
         working-directory: NetizenApps/TV
         run: |
           xcodegen generate
-          xcodebuild -project NetizenScreensaver.xcodeproj -scheme NetizenScreensaver -configuration Debug -sdk appletvsimulator -destination 'generic/platform=tvOS Simulator' CODE_SIGNING_ALLOWED=NO build
+          xcodebuild -project NetizenSignage.xcodeproj -scheme NetizenSignage -configuration Debug -sdk appletvsimulator -destination 'generic/platform=tvOS Simulator' CODE_SIGNING_ALLOWED=NO build
