@@ -77,7 +77,11 @@ jobs:
         run: |
           ipa=$(find "$RUNNER_TEMP/export" -maxdepth 1 -name '*.ipa' -print -quit)
           test -n "$ipa"
-          xcrun altool --upload-app -f "$ipa" -t ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER"
+          set -o pipefail
+          xcrun altool --upload-app -f "$ipa" -t ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER" 2>&1 | tee "$RUNNER_TEMP/upload.log"
+          if grep -Eq "UPLOAD FAILED|Failed to upload|Validation failed|ERROR:.*bundle version" "$RUNNER_TEMP/upload.log"; then
+            echo "::error::Apple rejected the iOS upload"; exit 1
+          fi
       - name: Clean up signing credentials
         if: always()
         run: |
