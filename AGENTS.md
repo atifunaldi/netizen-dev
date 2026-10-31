@@ -32,3 +32,8 @@ This repository is the user's mobile-first development workspace. Work should be
 
 ## Current project
 The first deliverable is a mobile-friendly Netizen Dev dashboard. Keep it functional and minimal. Future features should be user-directed.
+
+## Continuity between Codex and ChatGPT
+- After each completed development task, update `PROGRESS.md` with date, goal, files changed, tests actually run, outcome, unresolved issues, and next suggested step.
+- Commit `PROGRESS.md` together with the implementation when possible, so other GitHub-connected sessions can inspect progress.
+- Do not include credentials, personal data, or unverified success claims in progress notes.
