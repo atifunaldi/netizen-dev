@@ -3,17 +3,20 @@
     {
       "filename": "App Icon - Small.imagestack",
       "idiom": "tv",
-      "role": "primary-app-icon"
+      "role": "primary-app-icon",
+      "size": "400x240"
     },
     {
       "filename": "App Icon - Large.imagestack",
       "idiom": "tv",
-      "role": "primary-app-icon"
+      "role": "primary-app-icon",
+      "size": "1280x768"
     },
     {
       "filename": "Top Shelf Image.imageset",
       "idiom": "tv",
-      "role": "top-shelf-image-wide"
+      "role": "top-shelf-image-wide",
+      "size": "2320x720"
     }
   ],
   "info": {
