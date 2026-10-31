@@ -1,13 +1,13 @@
 import SwiftUI
 
 @main
-struct NetizenScreensaverApp: App {
+struct NetizenSignageApp: App {
     var body: some Scene {
-        WindowGroup { ScreensaverView() }
+        WindowGroup { SignageView() }
     }
 }
 
-struct ScreensaverView: View {
+struct SignageView: View {
     @State private var startedAt = Date()
 
     var body: some View {
