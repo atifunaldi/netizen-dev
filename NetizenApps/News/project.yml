@@ -18,6 +18,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Netizen News
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "2"
         CFBundleIconName: AppIcon
         UILaunchScreen: {}
     settings:
