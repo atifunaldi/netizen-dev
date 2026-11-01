@@ -65,7 +65,7 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard isTracking, let location = locations.last,
-              location.horizontalAccuracy >= 0, location.horizontalAccuracy < 120,
+              location.horizontalAccuracy >= 0, location.horizontalAccuracy < 3000,
               abs(location.timestamp.timeIntervalSinceNow) < 30 else { return }
 
         if placeName == "Konum bekleniyor" { placeName = "Yol adı aranıyor…"; updateSequence += 1 }
