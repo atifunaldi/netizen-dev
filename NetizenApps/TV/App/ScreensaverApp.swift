@@ -95,7 +95,7 @@ private final class SignageFeed: ObservableObject {
 }
 
 struct SignageView: View {
-    @Environment(\\.scenePhase) private var scenePhase
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var feed = SignageFeed()
     @State private var selected = 0
     @State private var lastRotation = Date.now
