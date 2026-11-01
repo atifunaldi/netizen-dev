@@ -33,12 +33,17 @@ struct WPPost: Decodable, Identifiable {
     let link: URL
     let title: WPTitle
     let excerpt: WPTitle
+    let content: WPTitle?
     let embedded: Embedded?
     enum CodingKeys: String, CodingKey {
-        case id, date, link, title, excerpt
+        case id, date, link, title, excerpt, content
         case embedded = "_embedded"
     }
     var imageURL: URL? { embedded?.media?.first?.source_url }
+    var readableBody: String {
+        let full = content?.rendered.newsFormattedHTML ?? ""
+        return full.isEmpty ? excerpt.rendered.newsFormattedHTML : full
+    }
 }
 
 @MainActor
@@ -72,6 +77,23 @@ final class NewsModel: ObservableObject {
 }
 
 extension String {
+    var newsFormattedHTML: String {
+        var html = self
+        html = html.replacingOccurrences(of: "(?is)<(script|style|figure|figcaption)[^>]*>.*?</\\1>", with: "", options: .regularExpression)
+        html = html.replacingOccurrences(of: "(?i)<li\\b[^>]*>", with: "\n• ", options: .regularExpression)
+        html = html.replacingOccurrences(of: "(?i)</li\\s*>", with: "\n", options: .regularExpression)
+        html = html.replacingOccurrences(of: "(?i)<br\\s*/?>", with: "\n", options: .regularExpression)
+        html = html.replacingOccurrences(of: "(?i)</(p|div|h[1-6]|ul|ol|blockquote)\\s*>", with: "\n\n", options: .regularExpression)
+        html = html.replacingOccurrences(of: "<[^>]*>", with: "", options: .regularExpression)
+        let entities = ["&amp;": "&", "&quot;": "\"", "&apos;": "'", "&lt;": "<", "&gt;": ">", "&nbsp;": " ", "&hellip;": "…", "&#8230;": "…", "&#8217;": "’", "&#8220;": "“", "&#8221;": "”", "&ndash;": "–", "&mdash;": "—"]
+        for (entity, replacement) in entities {
+            html = html.replacingOccurrences(of: entity, with: replacement)
+        }
+        html = html.replacingOccurrences(of: "[ \t]+", with: " ", options: .regularExpression)
+        html = html.replacingOccurrences(of: " *\n *", with: "\n", options: .regularExpression)
+        html = html.replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
+        return html.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
     var plainHTML: String {
         let withoutTags = replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
         return withoutTags
@@ -316,7 +338,7 @@ private struct NewsStoryCard: View {
                         .overlay(alignment: .leading) { red.frame(width: 4) }
 
                     ScrollView {
-                        Text(post.excerpt.rendered.plainHTML)
+                        Text(post.readableBody)
                             .font(.system(size: 16))
                             .foregroundStyle(.white.opacity(0.9))
                             .frame(maxWidth: .infinity, alignment: .leading)
