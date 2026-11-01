@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 @main
 struct DriveApp: App {
@@ -36,6 +37,10 @@ struct DriveContentView: View {
                 Text(weather.temperature.map { "\($0)°C" } ?? "—°C")
                     .font(.system(size: 48, weight: .bold, design: .rounded))
                 Text(weather.status).font(.footnote).foregroundStyle(.secondary)
+                if let updated = weather.lastUpdated {
+                    Text("Son hava durumu: \(updated.formatted(date: .omitted, time: .shortened))")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
                 Button("Hava durumunu yenile") { weather.request() }
                     .disabled(weather.isLoading)
                 Button {
@@ -61,6 +66,12 @@ struct DriveContentView: View {
             }
             .padding()
             .navigationTitle("Netizen Drive")
+        }
+        .onReceive(weather.$lastUpdated.compactMap { $0 }) { _ in
+            guard let temperature = weather.temperature else { return }
+            Task {
+                await manager.updateIfActive(temperature: temperature, location: weather.placeName)
+            }
         }
         .tint(Color(red: 1, green: 0.04, blue: 0.22))
     }
