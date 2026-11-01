@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 @main
 struct NetizenSignageApp: App {
@@ -27,12 +28,17 @@ private struct Headline: Decodable, Identifiable {
     let id: Int
     let title: Rendered
     let excerpt: Rendered
+    let content: Rendered?
     let date: String
     let categories: [Int]?
     let embedded: Embedded?
     enum CodingKeys: String, CodingKey {
-        case id, title, excerpt, date, categories
+        case id, title, excerpt, content, date, categories
         case embedded = "_embedded"
+    }
+    var articleText: String {
+        let full = content?.rendered.readableArticle ?? ""
+        return full.isEmpty ? excerpt.rendered.readableArticle : full
     }
     var imageURL: URL? {
         guard let media = embedded?.wpFeaturedmedia?.first else { return nil }
@@ -41,6 +47,19 @@ private struct Headline: Decodable, Identifiable {
 }
 
 private extension String {
+    var readableArticle: String {
+        var value = self
+        value = value.replacingOccurrences(of: "(?i)<br\\s*/?>", with: "\\n", options: .regularExpression)
+        value = value.replacingOccurrences(of: "(?i)</(p|div|h[1-6]|li|ul|ol|blockquote)>", with: "\\n", options: .regularExpression)
+        value = value.replacingOccurrences(of: "(?i)<li[^>]*>", with: "• ", options: .regularExpression)
+        value = value.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        let entities = ["&amp;": "&", "&quot;": "\"", "&#8217;": "’", "&#8230;": "…", "&nbsp;": " ", "&lt;": "<", "&gt;": ">", "&ndash;": "–", "&mdash;": "—"]
+        for (entity, replacement) in entities { value = value.replacingOccurrences(of: entity, with: replacement) }
+        value = value.replacingOccurrences(of: "&#([0-9]+);", with: "", options: .regularExpression)
+        value = value.replacingOccurrences(of: "[ \\t]+", with: " ", options: .regularExpression)
+        value = value.replacingOccurrences(of: "\\n[ \\t]*\\n[\\n]*", with: "\\n\\n", options: .regularExpression)
+        return value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
     var plainText: String {
         replacingOccurrences(of: "<[^>]*>", with: " ", options: .regularExpression)
             .replacingOccurrences(of: "&amp;", with: "&")
@@ -76,6 +95,7 @@ private final class SignageFeed: ObservableObject {
 }
 
 struct SignageView: View {
+    @Environment(\\.scenePhase) private var scenePhase
     @StateObject private var feed = SignageFeed()
     @State private var selected = 0
     @State private var lastRotation = Date.now
@@ -121,7 +141,7 @@ struct SignageView: View {
                             .frame(width: geometry.size.width * 0.49, height: geometry.size.height - 235)
                             .clipped()
 
-                            VStack(alignment: .leading, spacing: 21) {
+                            VStack(alignment: .leading, spacing: 15) {
                                 Text(item.title.rendered.plainText)
                                     .font(.system(size: 48, weight: .heavy))
                                     .fixedSize(horizontal: false, vertical: true)
@@ -129,17 +149,16 @@ struct SignageView: View {
                                 Text(item.date.prefix(10))
                                     .font(.system(size: 20))
                                     .foregroundStyle(.white.opacity(0.7))
-                                Text(item.excerpt.rendered.plainText)
-                                    .font(.system(size: 27))
-                                    .lineSpacing(8)
-                                    .foregroundStyle(.white.opacity(0.88))
-                                    .lineLimit(11)
-                                Spacer(minLength: 0)
-                                Text("Okumaya devam →")
-                                    .font(.system(size: 22, weight: .semibold))
-                                    .overlay(alignment: .bottom) {
-                                        Rectangle().fill(red).frame(height: 3).offset(y: 7)
-                                    }
+                                ScrollView(.vertical) {
+                                    Text(item.articleText)
+                                        .font(.system(size: 26))
+                                        .lineSpacing(7)
+                                        .foregroundStyle(.white.opacity(0.9))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                .scrollIndicators(.hidden)
+                                .focusable(false)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         }
@@ -187,7 +206,14 @@ struct SignageView: View {
                 }
             }
         }
-        .task { await feed.refresh() }
+        .task {
+            UIApplication.shared.isIdleTimerDisabled = true
+            await feed.refresh()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { UIApplication.shared.isIdleTimerDisabled = true }
+        }
+        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
         .persistentSystemOverlays(.hidden)
     }
 }
