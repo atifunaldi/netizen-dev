@@ -27,6 +27,19 @@ final class DriveActivityManager: ObservableObject {
         }
     }
 
+    func updateDrivingInfo(temperature: Int?, roadName: String?) async {
+        let state = DriveActivityAttributes.ContentState(
+            temperatureCelsius: temperature.map(Double.init),
+            locationName: roadName,
+            observedAt: .now
+        )
+        for activity in Activity<DriveActivityAttributes>.activities {
+            await activity.update(
+                ActivityContent(state: state, staleDate: Date().addingTimeInterval(15 * 60))
+            )
+        }
+    }
+
     func stop() async {
         for activity in Activity<DriveActivityAttributes>.activities {
             await activity.end(nil, dismissalPolicy: .immediate)
