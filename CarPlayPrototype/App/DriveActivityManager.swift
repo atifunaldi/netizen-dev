@@ -6,24 +6,29 @@ final class DriveActivityManager: ObservableObject {
     @Published var message = "Hazır"
     private var current: Activity<DriveActivityAttributes>?
 
-    func startPreview(temperature: Int = 3, location: String = "Örnek konum") async {
+    func startOrUpdate(temperature: Int?, roadName: String?) async {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             message = "Live Activities ayarlardan etkinleştirilmeli."
             return
         }
-        do {
-            let attributes = DriveActivityAttributes(title: "Araç Bilgi Paneli")
-            let state = DriveActivityAttributes.ContentState(
-                temperatureCelsius: Double(temperature), locationName: location, observedAt: .now
-            )
-            current = try Activity.request(
-                attributes: attributes,
-                content: ActivityContent(state: state, staleDate: Date().addingTimeInterval(15 * 60)),
-                pushType: nil
-            )
-            message = "Live Activity başlatıldı."
-        } catch {
-            message = "Başlatılamadı: \(error.localizedDescription)"
+        if Activity<DriveActivityAttributes>.activities.isEmpty {
+            do {
+                let state = DriveActivityAttributes.ContentState(
+                    temperatureCelsius: temperature.map(Double.init),
+                    locationName: roadName,
+                    observedAt: .now
+                )
+                current = try Activity.request(
+                    attributes: DriveActivityAttributes(title: "Araç Bilgi Paneli"),
+                    content: ActivityContent(state: state, staleDate: Date().addingTimeInterval(15 * 60)),
+                    pushType: nil
+                )
+                message = "Live Activity başlatıldı."
+            } catch {
+                message = "Başlatılamadı: \(error.localizedDescription)"
+            }
+        } else {
+            await updateDrivingInfo(temperature: temperature, roadName: roadName)
         }
     }
 
