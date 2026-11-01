@@ -32,6 +32,22 @@ final class DriveActivityManager: ObservableObject {
         }
     }
 
+
+    func updateIfActive(temperature: Int, location: String) async {
+        guard !Activity<DriveActivityAttributes>.activities.isEmpty else { return }
+        let state = DriveActivityAttributes.ContentState(
+            temperatureCelsius: Double(temperature),
+            locationName: location,
+            observedAt: .now
+        )
+        for activity in Activity<DriveActivityAttributes>.activities {
+            await activity.update(
+                ActivityContent(state: state, staleDate: Date().addingTimeInterval(15 * 60))
+            )
+        }
+        message = "Güncel hava durumu Live Activity'ye aktarıldı."
+    }
+
     func stop() async {
         for activity in Activity<DriveActivityAttributes>.activities {
             await activity.end(nil, dismissalPolicy: .immediate)
