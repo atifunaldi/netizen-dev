@@ -80,7 +80,7 @@ jobs:
           build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")
           echo "Archived Drive: $version ($build)"
           test "$version" = "1.2"
-          test "$build" = "4"
+          test "$build" = "5"
       - name: Export App Store IPA
         run: |
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<'PLIST'
@@ -107,7 +107,7 @@ jobs:
           build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$RUNNER_TEMP/drive-export-info.plist")
           echo "Exported Drive IPA: $version ($build)"
           test "$version" = "1.2"
-          test "$build" = "4"
+          test "$build" = "5"
       - name: Upload to TestFlight
         env:
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
