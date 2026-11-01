@@ -4,6 +4,8 @@ import Foundation
 @MainActor
 final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var temperature: Int?
+    @Published var isLoading = false
+    @Published var lastUpdated: Date?
     @Published var placeName = "Konum bekleniyor"
     @Published var status = "Konum izni verilmedi."
     private let locationManager = CLLocationManager()
@@ -41,6 +43,7 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
         guard let location = locations.last else { return }
         placeName = String(format: "%.3f, %.3f", location.coordinate.latitude, location.coordinate.longitude)
         status = "Hava durumu alınıyor…"
+        isLoading = true
         Task { await fetchWeather(at: location.coordinate) }
     }
 
@@ -63,9 +66,11 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
                 throw URLError(.badServerResponse)
             }
             temperature = Int(try JSONDecoder().decode(WeatherResponse.self, from: data).current.temperature_2m.rounded())
+            lastUpdated = .now
             status = "Güncel sıcaklık alındı."
         } catch {
-            status = "Hava durumu alınamadı: \(error.localizedDescription)"
+            status = "Hava durumu alınamadı; son geçerli değer korunuyor: \(error.localizedDescription)"
         }
+        isLoading = false
     }
 }
