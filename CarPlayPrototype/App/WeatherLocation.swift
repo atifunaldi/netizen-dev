@@ -27,6 +27,7 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
 
     func startDriving() {
         isTracking = true
+        status = "Konum izni kontrol ediliyor…"
         request()
     }
 
@@ -39,9 +40,12 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
     func request() {
         switch locationManager.authorizationStatus {
         case .notDetermined:
+            status = "Konum izni bekleniyor…"
             locationManager.requestWhenInUseAuthorization()
         case .authorizedWhenInUse, .authorizedAlways:
-            locationManager.startUpdatingLocation()
+            status = "Konum alınıyor…"
+            locationManager.requestLocation()
+            if isTracking { locationManager.startUpdatingLocation() }
         case .restricted, .denied:
             status = "Konum erişimi kapalı. Ayarlar'dan izin verebilirsiniz."
         @unknown default:
@@ -51,7 +55,7 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         if manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways {
-            manager.requestLocation()
+            request()
         }
     }
 
@@ -64,6 +68,7 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
               location.horizontalAccuracy >= 0, location.horizontalAccuracy < 120,
               abs(location.timestamp.timeIntervalSinceNow) < 30 else { return }
 
+        if placeName == "Konum bekleniyor" { placeName = "Yol adı aranıyor…"; updateSequence += 1 }
         let roadDistance = lastRoadLocation.map { location.distance(from: $0) } ?? .infinity
         if !isGeocoding && roadDistance > 35 && Date().timeIntervalSince(lastRoadTime) > 8 {
             lastRoadLocation = location
@@ -74,7 +79,8 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
                 do {
                     let marks = try await geocoder.reverseGeocodeLocation(location, preferredLocale: Locale(identifier: "tr_TR"))
                     guard isTracking else { return }
-                    if let road = marks.first?.thoroughfare, !road.isEmpty, road != placeName {
+                    let road = marks.first?.thoroughfare ?? marks.first?.name ?? marks.first?.locality
+                    if let road, !road.isEmpty, road != placeName {
                         placeName = road
                         updateSequence += 1
                     }
@@ -110,8 +116,9 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
             guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
                 throw URLError(.badServerResponse)
             }
-            temperature = Int(try JSONDecoder().decode(WeatherResponse.self, from: data).current.temperature_2m.rounded())
+            let reading = Int(try JSONDecoder().decode(WeatherResponse.self, from: data).current.temperature_2m.rounded())
             guard isTracking else { return }
+            temperature = reading
             status = "Güncel sıcaklık alındı."
             updateSequence += 1
         } catch {
