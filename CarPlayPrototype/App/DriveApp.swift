@@ -57,31 +57,11 @@ struct DriveContentView: View {
             .background(panel, in: RoundedRectangle(cornerRadius: 24))
             .overlay(RoundedRectangle(cornerRadius: 24).stroke(.white.opacity(0.65), lineWidth: 1))
 
-            if !weather.isTracking && !carPlayAutomationActive {
-                Button {
-                    weather.startDriving()
-                } label: {
-                    Label("Sürüşü başlat", systemImage: "location.fill")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                }
-                .buttonStyle(.plain)
-                .background(red, in: Capsule())
-            } else {
-                Button {
-                    weather.stopDriving()
-                    Task { await manager.stop() }
-                } label: {
-                    Label("Sürüşü bitir", systemImage: "stop.fill")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                }
-                .buttonStyle(.plain)
-                .background(panel, in: Capsule())
-                .overlay(Capsule().stroke(red, lineWidth: 1))
-            }
+            Text(weather.isTracking ? "Sürüş aktif" : "CarPlay bağlantısı bekleniyor")
+                .font(.headline)
+                .foregroundStyle(.white.opacity(0.8))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
 
             if weather.isTracking && weather.temperature == nil {
                 Text("Konum alındıktan sonra sıcaklık ve yol bilgisi otomatik güncellenecek.")
