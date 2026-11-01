@@ -7,7 +7,7 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.2"
-    CURRENT_PROJECT_VERSION: "4"
+    CURRENT_PROJECT_VERSION: "5"
     CODE_SIGNING_ALLOWED: "NO"
 targets:
   NetizenDrive:
@@ -21,10 +21,11 @@ targets:
       properties:
         CFBundleDisplayName: Netizen Drive
         CFBundleShortVersionString: "1.2"
-        CFBundleVersion: "4"
+        CFBundleVersion: "5"
         UILaunchScreen: {}
         CFBundleIconName: AppIcon
         NSSupportsLiveActivities: true
+        NSLocationWhenInUseUsageDescription: "Bulunduğunuz konumun güncel hava sıcaklığını göstermek için konum izni gereklidir."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.netizen.drive
