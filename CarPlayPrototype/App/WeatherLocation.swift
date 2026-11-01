@@ -25,6 +25,24 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
         locationManager.pausesLocationUpdatesAutomatically = false
     }
 
+    func requestPermissionOnLaunch() {
+        guard CLLocationManager.locationServicesEnabled() else {
+            status = "iPhone konum servisleri kapalı."
+            return
+        }
+        switch locationManager.authorizationStatus {
+        case .notDetermined:
+            status = "Konum izni isteniyor…"
+            locationManager.requestWhenInUseAuthorization()
+        case .authorizedAlways, .authorizedWhenInUse:
+            status = "Konum izni hazır. Sürüş bekleniyor."
+        case .denied, .restricted:
+            status = "Konum erişimi kapalı. Ayarlar > Netizen Drive > Konum."
+        @unknown default:
+            status = "Konum izni belirlenemedi."
+        }
+    }
+
     func startDriving() {
         isTracking = true
         status = "Konum izni kontrol ediliyor…"
@@ -55,7 +73,10 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         if manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways {
-            request()
+            if isTracking { request() }
+            else { status = "Konum izni hazır. Sürüş bekleniyor." }
+        } else if manager.authorizationStatus == .denied || manager.authorizationStatus == .restricted {
+            status = "Konum erişimi kapalı. Ayarlar > Netizen Drive > Konum."
         }
     }
 
