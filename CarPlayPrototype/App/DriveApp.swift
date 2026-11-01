@@ -10,6 +10,7 @@ struct DriveApp: App {
 struct DriveContentView: View {
     @StateObject private var manager = DriveActivityManager()
     @StateObject private var weather = WeatherLocation()
+    @State private var carPlayAutomationActive = false
 
     private let navy = Color(red: 3.0 / 255, green: 21.0 / 255, blue: 45.0 / 255)
     private let panel = Color(red: 7.0 / 255, green: 29.0 / 255, blue: 56.0 / 255)
@@ -56,7 +57,7 @@ struct DriveContentView: View {
             .background(panel, in: RoundedRectangle(cornerRadius: 24))
             .overlay(RoundedRectangle(cornerRadius: 24).stroke(.white.opacity(0.65), lineWidth: 1))
 
-            if !weather.isTracking {
+            if !weather.isTracking && !carPlayAutomationActive {
                 Button {
                     weather.startDriving()
                 } label: {
@@ -103,6 +104,21 @@ struct DriveContentView: View {
         .foregroundStyle(.white)
         .onAppear {
             weather.requestPermissionOnLaunch()
+        }
+        .onOpenURL { url in
+            guard url.scheme?.lowercased() == "netizendrive",
+                  url.host?.lowercased() == "carplay" else { return }
+            switch url.path.lowercased() {
+            case "/connect":
+                carPlayAutomationActive = true
+                weather.startDriving()
+            case "/disconnect":
+                carPlayAutomationActive = false
+                weather.stopDriving()
+                Task { await manager.stop() }
+            default:
+                break
+            }
         }
         .onChange(of: weather.updateSequence) { _, _ in
             guard weather.isTracking && weather.temperature != nil else { return }
