@@ -101,6 +101,9 @@ struct DriveContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(navy.ignoresSafeArea())
         .foregroundStyle(.white)
+        .onAppear {
+            weather.requestPermissionOnLaunch()
+        }
         .onChange(of: weather.updateSequence) { _, _ in
             guard weather.isTracking && weather.temperature != nil else { return }
             Task { await manager.startOrUpdate(temperature: weather.temperature, roadName: weather.placeName) }
