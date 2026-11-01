@@ -49,15 +49,15 @@ private struct Headline: Decodable, Identifiable {
 private extension String {
     var readableArticle: String {
         var value = self
-        value = value.replacingOccurrences(of: "(?i)<br\\s*/?>", with: "\\n", options: .regularExpression)
-        value = value.replacingOccurrences(of: "(?i)</(p|div|h[1-6]|li|ul|ol|blockquote)>", with: "\\n", options: .regularExpression)
+        value = value.replacingOccurrences(of: "(?i)<br\\s*/?>", with: "\n", options: .regularExpression)
+        value = value.replacingOccurrences(of: "(?i)</(p|div|h[1-6]|li|ul|ol|blockquote)>", with: "\n", options: .regularExpression)
         value = value.replacingOccurrences(of: "(?i)<li[^>]*>", with: "• ", options: .regularExpression)
         value = value.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
         let entities = ["&amp;": "&", "&quot;": "\"", "&#8217;": "’", "&#8230;": "…", "&nbsp;": " ", "&lt;": "<", "&gt;": ">", "&ndash;": "–", "&mdash;": "—"]
         for (entity, replacement) in entities { value = value.replacingOccurrences(of: entity, with: replacement) }
         value = value.replacingOccurrences(of: "&#([0-9]+);", with: "", options: .regularExpression)
         value = value.replacingOccurrences(of: "[ \\t]+", with: " ", options: .regularExpression)
-        value = value.replacingOccurrences(of: "\\n[ \\t]*\\n[\\n]*", with: "\\n\\n", options: .regularExpression)
+        value = value.replacingOccurrences(of: "\\n[ \\t]*\\n[\\n]*", with: "\n\n", options: .regularExpression)
         return value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     var plainText: String {
