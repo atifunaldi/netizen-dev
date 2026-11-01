@@ -9,16 +9,24 @@ struct DriveApp: App {
 }
 
 struct DriveContentView: View {
+    private let navy = Color(red: 3/255, green: 21/255, blue: 45/255)
+    private let panel = Color(red: 7/255, green: 29/255, blue: 56/255)
+    private let accent = Color(red: 1, green: 48/255, blue: 74/255)
+    private let border = Color(red: 23/255, green: 69/255, blue: 104/255)
     @StateObject private var manager = DriveActivityManager()
     @StateObject private var weather = WeatherLocation()
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 22) {
+            VStack(spacing: 18) {
                 Image(systemName: "car.side.fill")
                     .font(.system(size: 54))
-                    .foregroundStyle(Color(red: 1, green: 0.04, blue: 0.22))
+                    .foregroundStyle(accent)
                     .accessibilityHidden(true)
+                Text("NETIZEN  •  DRIVE")
+                    .font(.system(size: 17, weight: .black, design: .rounded))
+                    .tracking(3)
+                    .foregroundStyle(.white)
                 Text("Araç Bilgi Paneli")
                     .font(.largeTitle.bold())
                 Text("Netizen Drive 1.2")
@@ -35,7 +43,11 @@ struct DriveContentView: View {
                 }
                 .buttonStyle(.bordered)
                 Text(weather.temperature.map { "\($0)°C" } ?? "—°C")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(.system(size: 64, weight: .bold, design: .rounded))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(panel, in: RoundedRectangle(cornerRadius: 18))
+                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(border, lineWidth: 1))
                 Text(weather.status).font(.footnote).foregroundStyle(.secondary)
                 if let updated = weather.lastUpdated {
                     Text("Son hava durumu: \(updated.formatted(date: .omitted, time: .shortened))")
@@ -65,7 +77,12 @@ struct DriveContentView: View {
                     .foregroundStyle(.secondary)
             }
             .padding()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(navy)
+            .foregroundStyle(.white)
             .navigationTitle("Netizen Drive")
+            .toolbarBackground(navy, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .onReceive(weather.$lastUpdated.compactMap { $0 }) { _ in
             guard let temperature = weather.temperature else { return }
@@ -73,6 +90,7 @@ struct DriveContentView: View {
                 await manager.updateIfActive(temperature: temperature, location: weather.placeName)
             }
         }
-        .tint(Color(red: 1, green: 0.04, blue: 0.22))
+        .tint(accent)
+        .preferredColorScheme(.dark)
     }
 }
