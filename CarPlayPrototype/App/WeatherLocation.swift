@@ -6,12 +6,34 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
     @Published var temperature: Int?
     @Published var placeName = "Konum bekleniyor"
     @Published var status = "Konum izni verilmedi."
+    @Published var updateSequence = 0
+    @Published var isTracking = false
+    private let geocoder = CLGeocoder()
+    private var lastWeatherTime = Date.distantPast
+    private var lastWeatherLocation: CLLocation?
+    private var lastRoadLocation: CLLocation?
+    private var lastRoadTime = Date.distantPast
+    private var isGeocoding = false
     private let locationManager = CLLocationManager()
 
     override init() {
         super.init()
         locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.distanceFilter = 35
+        locationManager.activityType = .automotiveNavigation
+        locationManager.pausesLocationUpdatesAutomatically = false
+    }
+
+    func startDriving() {
+        isTracking = true
+        request()
+    }
+
+    func stopDriving() {
+        isTracking = false
+        locationManager.stopUpdatingLocation()
+        status = "Sürüş durduruldu."
     }
 
     func request() {
@@ -19,7 +41,7 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
         case .notDetermined:
             locationManager.requestWhenInUseAuthorization()
         case .authorizedWhenInUse, .authorizedAlways:
-            locationManager.requestLocation()
+            locationManager.startUpdatingLocation()
         case .restricted, .denied:
             status = "Konum erişimi kapalı. Ayarlar'dan izin verebilirsiniz."
         @unknown default:
@@ -38,10 +60,36 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
-        placeName = String(format: "%.3f, %.3f", location.coordinate.latitude, location.coordinate.longitude)
-        status = "Hava durumu alınıyor…"
-        Task { await fetchWeather(at: location.coordinate) }
+        guard isTracking, let location = locations.last,
+              location.horizontalAccuracy >= 0, location.horizontalAccuracy < 120,
+              abs(location.timestamp.timeIntervalSinceNow) < 30 else { return }
+
+        let roadDistance = lastRoadLocation.map { location.distance(from: $0) } ?? .infinity
+        if !isGeocoding && roadDistance > 35 && Date().timeIntervalSince(lastRoadTime) > 8 {
+            lastRoadLocation = location
+            lastRoadTime = .now
+            isGeocoding = true
+            Task {
+                defer { isGeocoding = false }
+                do {
+                    let marks = try await geocoder.reverseGeocodeLocation(location, preferredLocale: Locale(identifier: "tr_TR"))
+                    guard isTracking else { return }
+                    if let road = marks.first?.thoroughfare, !road.isEmpty, road != placeName {
+                        placeName = road
+                        updateSequence += 1
+                    }
+                } catch {
+                    status = "Yol adı geçici olarak alınamadı."
+                }
+            }
+        }
+
+        let weatherDistance = lastWeatherLocation.map { location.distance(from: $0) } ?? .infinity
+        if Date().timeIntervalSince(lastWeatherTime) > 600 || weatherDistance > 10000 {
+            lastWeatherTime = .now
+            lastWeatherLocation = location
+            Task { await fetchWeather(at: location.coordinate) }
+        }
     }
 
     private struct WeatherResponse: Decodable {
@@ -63,7 +111,9 @@ final class WeatherLocation: NSObject, ObservableObject, CLLocationManagerDelega
                 throw URLError(.badServerResponse)
             }
             temperature = Int(try JSONDecoder().decode(WeatherResponse.self, from: data).current.temperature_2m.rounded())
+            guard isTracking else { return }
             status = "Güncel sıcaklık alındı."
+            updateSequence += 1
         } catch {
             status = "Hava durumu alınamadı: \(error.localizedDescription)"
         }
